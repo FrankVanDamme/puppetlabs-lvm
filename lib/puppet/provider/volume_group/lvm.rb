@@ -61,6 +61,21 @@ Puppet::Type.type(:volume_group).provide :lvm do
     # Only take action if createonly is false just to be safe
     #  this is really only here to enforce the createonly setting
     #  if something goes wrong in physical_volumes
+
+    # Need to replace device path with real names, instead of symlink
+    if @resource.parameter(:followsymlinks).value == :true then
+      new_volume_real = []
+      new_volumes.each do |s|
+          if File.symlink?(s)
+              device = File.expand_path(File.readlink(s), File.dirname(s))
+              new_volume_real.push device
+          else
+              new_volume_real.push s
+          end
+      end
+      new_volumes = new_volume_real
+    end
+
     return unless @resource[:createonly].to_s == 'false'
 
     existing_volumes = physical_volumes
